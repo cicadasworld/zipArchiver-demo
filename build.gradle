@@ -1,0 +1,21 @@
+plugins {
+    id 'application'
+}
+
+group 'com.jin'
+version '1.0.0'
+
+application {
+    mainClassName = 'com.jin.Archiver'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+    from {
+        configurations.compileClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+}
