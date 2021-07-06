@@ -61,6 +61,9 @@ public class ZipUtil {
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zipFile))) {
             ZipEntry zipEntry;
             while ( (zipEntry = zis.getNextEntry()) != null) {
+                if (zipEntry.isDirectory()) {
+                    continue;
+                }
                 String fileName = zipEntry.getName();
                 Path fileFullName = targetDir.resolve(fileName);
                 Path parent = fileFullName.getParent();
