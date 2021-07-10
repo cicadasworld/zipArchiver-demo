@@ -8,7 +8,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class ZipUtil {
+public class ZipUtils {
 
     public static void zip(String folderToZip, String zipFileName) throws IOException {
         Path sourceDir = Paths.get(folderToZip);
@@ -49,9 +49,6 @@ public class ZipUtil {
 
     public static void unzip(String zipFileName, String folderToExtract) throws IOException {
         Path zipFile = Paths.get(zipFileName);
-        if (!Files.isRegularFile(zipFile)) {
-            return;
-        }
 
         Path targetDir = Paths.get(folderToExtract);
         if (Files.notExists(targetDir)) {
