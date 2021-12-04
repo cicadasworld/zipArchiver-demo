@@ -1,6 +1,7 @@
 package com.jin;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,27 +48,32 @@ public class ZipUtils {
         }
     }
 
-    public static void unzip(String zipFileName, String folderToExtract) throws IOException {
-        Path zipFile = Paths.get(zipFileName);
+    public static void unzip(String zipFileName, String folderToExtract, Charset charset) throws IOException {
+        Path source = Paths.get(zipFileName);
+        Path target = Paths.get(folderToExtract);
 
-        Path targetDir = Paths.get(folderToExtract);
-        if (Files.notExists(targetDir)) {
-            Files.createDirectories(targetDir);
-        }
-
-        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zipFile))) {
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(source), charset)) {
             ZipEntry zipEntry;
             while ( (zipEntry = zis.getNextEntry()) != null) {
+                Path targetDirResolved = target.resolve(zipEntry.getName());
+                // prevent zip slip vulnerability
+                // make sure normalized file still has targetDir as its prefix else throw exception
+                Path normalizedPath = targetDirResolved.normalize();
+                if (!normalizedPath.startsWith(target)) {
+                    throw new IOException("Bad zip entry: " + zipEntry.getName());
+                }
                 if (zipEntry.isDirectory()) {
-                    continue;
+                    Files.createDirectories(normalizedPath);
+                } else {
+                    Path parent = normalizedPath.getParent();
+                    if (parent != null) {
+                        if (Files.notExists(parent)) {
+                            Files.createDirectories(parent);
+                        }
+                    }
+                    // file copy, nio
+                    Files.copy(zis, normalizedPath, StandardCopyOption.REPLACE_EXISTING);
                 }
-                String fileName = zipEntry.getName();
-                Path fileFullName = targetDir.resolve(fileName);
-                Path parent = fileFullName.getParent();
-                if (Files.notExists(parent)) {
-                    Files.createDirectories(parent);
-                }
-                Files.copy(zis, fileFullName, StandardCopyOption.REPLACE_EXISTING);
             }
             zis.closeEntry();
         }
